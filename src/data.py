@@ -1,4 +1,3 @@
-"""Dataset download, loading, and train/test splitting."""
 from __future__ import annotations
 
 import shutil
@@ -18,16 +17,11 @@ from src.config import (
 
 
 def download_dataset() -> Path:
-    """Download the Kaggle credit card fraud dataset via kagglehub.
-
-    Copies the CSV into the project's local data/ directory on first run
-    so PyCharm users don't need to dig into kagglehub's cache.
-    """
     local_csv = DATA_DIR / DATASET_CSV_NAME
     if local_csv.exists():
         return local_csv
 
-    import kagglehub  # imported lazily so tests don't require network
+    import kagglehub
 
     print(f"Downloading {KAGGLE_DATASET} via kagglehub...")
     cache_dir = Path(kagglehub.dataset_download(KAGGLE_DATASET))
@@ -42,21 +36,14 @@ def download_dataset() -> Path:
         source_csv = matches[0]
 
     shutil.copy2(source_csv, local_csv)
-    print(f"Dataset saved to {local_csv}")
     return local_csv
 
 
 def load_dataframe() -> pd.DataFrame:
-    """Load the credit card fraud dataset as a pandas DataFrame."""
-    csv_path = download_dataset()
-    df = pd.read_csv(csv_path)
-    return df
+    return pd.read_csv(download_dataset())
 
 
-def split_features_target(
-    df: pd.DataFrame,
-) -> tuple[pd.DataFrame, pd.Series]:
-    """Split a DataFrame into feature matrix X and target vector y."""
+def split_features_target(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     X = df.drop(columns=[TARGET_COLUMN])
     y = df[TARGET_COLUMN].astype(int)
     return X, y
@@ -66,7 +53,6 @@ def stratified_split(
     X: pd.DataFrame,
     y: pd.Series,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
-    """Stratified train/test split that preserves the fraud class ratio."""
     return train_test_split(
         X,
         y,

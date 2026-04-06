@@ -1,4 +1,3 @@
-"""Model evaluation: PR curves, confusion matrices, metrics summary."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -32,15 +31,6 @@ class EvalResult:
     plot_paths: dict[str, Path] = field(default_factory=dict)
 
 
-def _predict_proba(model: Any, X: pd.DataFrame) -> np.ndarray:
-    """Return probability of the positive (fraud) class."""
-    if hasattr(model, "predict_proba"):
-        return model.predict_proba(X)[:, 1]
-    # Fallback for models without predict_proba.
-    scores = model.decision_function(X)
-    return (scores - scores.min()) / (scores.max() - scores.min() + 1e-12)
-
-
 def plot_precision_recall(
     name: str, y_true: pd.Series, y_scores: np.ndarray, out_dir: Path
 ) -> Path:
@@ -64,9 +54,7 @@ def plot_precision_recall(
     return path
 
 
-def plot_confusion_matrix(
-    name: str, cm: np.ndarray, out_dir: Path
-) -> Path:
+def plot_confusion_matrix(name: str, cm: np.ndarray, out_dir: Path) -> Path:
     fig, ax = plt.subplots(figsize=(5, 4))
     sns.heatmap(
         cm,
@@ -96,7 +84,7 @@ def evaluate_model(
     y_test: pd.Series,
     out_dir: Path = OUTPUTS_DIR,
 ) -> EvalResult:
-    y_scores = _predict_proba(model, X_test)
+    y_scores = model.predict_proba(X_test)[:, 1]
     y_pred = (y_scores >= 0.5).astype(int)
 
     result = EvalResult(
@@ -107,17 +95,12 @@ def evaluate_model(
         recall=float(recall_score(y_test, y_pred)),
         confusion=confusion_matrix(y_test, y_pred),
     )
-    result.plot_paths["pr_curve"] = plot_precision_recall(
-        name, y_test, y_scores, out_dir
-    )
-    result.plot_paths["confusion_matrix"] = plot_confusion_matrix(
-        name, result.confusion, out_dir
-    )
+    result.plot_paths["pr_curve"] = plot_precision_recall(name, y_test, y_scores, out_dir)
+    result.plot_paths["confusion_matrix"] = plot_confusion_matrix(name, result.confusion, out_dir)
     return result
 
 
 def summarize(results: list[EvalResult]) -> pd.DataFrame:
-    """Return a tidy comparison table of evaluation results."""
     rows = [
         {
             "model": r.name,

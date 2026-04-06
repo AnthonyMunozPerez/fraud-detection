@@ -1,4 +1,3 @@
-"""Feature scaling and class-imbalance handling strategies."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -24,17 +23,12 @@ class PreparedData:
 
 
 def fit_scaler(X_train: pd.DataFrame) -> RobustScaler:
-    """Fit a RobustScaler on the columns that need scaling."""
     scaler = RobustScaler()
     scaler.fit(X_train[SCALE_COLUMNS])
     return scaler
 
 
-def apply_scaler(
-    X: pd.DataFrame,
-    scaler: RobustScaler,
-) -> pd.DataFrame:
-    """Return a copy of X with SCALE_COLUMNS replaced by their scaled values."""
+def apply_scaler(X: pd.DataFrame, scaler: RobustScaler) -> pd.DataFrame:
     X_scaled = X.copy()
     X_scaled[SCALE_COLUMNS] = scaler.transform(X[SCALE_COLUMNS])
     return X_scaled
@@ -46,7 +40,6 @@ def prepare(
     y_train: pd.Series,
     y_test: pd.Series,
 ) -> PreparedData:
-    """Scale train and test, fitting the scaler on train only."""
     scaler = fit_scaler(X_train)
     return PreparedData(
         X_train=apply_scaler(X_train, scaler),
@@ -62,13 +55,6 @@ def resample(
     y_train: pd.Series,
     strategy: ResampleStrategy,
 ) -> tuple[pd.DataFrame, pd.Series]:
-    """Apply a resampling strategy to training data only.
-
-    Strategies:
-        - "none": no resampling (use class_weight in the model instead)
-        - "smote": synthetic oversampling of the minority class
-        - "undersample": random undersampling of the majority class
-    """
     if strategy == "none":
         return X_train, y_train
     if strategy == "smote":

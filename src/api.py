@@ -1,10 +1,8 @@
-"""FastAPI app serving the best fraud detection model."""
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
 import joblib
-import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -16,16 +14,10 @@ from src.config import (
     SCALER_FILENAME,
 )
 
-FEATURE_ORDER = (
-    ["Time"]
-    + [f"V{i}" for i in range(1, 29)]
-    + ["Amount"]
-)
+FEATURE_ORDER = ["Time"] + [f"V{i}" for i in range(1, 29)] + ["Amount"]
 
 
 class Transaction(BaseModel):
-    """A single credit card transaction to score."""
-
     Time: float = Field(..., description="Seconds elapsed since first txn")
     V1: float
     V2: float
@@ -69,7 +61,6 @@ state: dict = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load model + scaler on startup."""
     model_path = MODELS_DIR / BEST_MODEL_FILENAME
     scaler_path = MODELS_DIR / SCALER_FILENAME
     if not model_path.exists() or not scaler_path.exists():
@@ -94,10 +85,7 @@ app = FastAPI(
 
 @app.get("/health")
 def health() -> dict:
-    return {
-        "status": "ok",
-        "model_loaded": "model" in state,
-    }
+    return {"status": "ok", "model_loaded": "model" in state}
 
 
 @app.post("/predict", response_model=PredictionResponse)
