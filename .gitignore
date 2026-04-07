@@ -8,6 +8,8 @@ models/*
 !models/.gitkeep
 outputs/*
 !outputs/.gitkeep
+!outputs/pr_curves_combined.png
+!outputs/confusion_matrix_xgboost_none.png
 .idea/
 .DS_Store
 *.egg-info/

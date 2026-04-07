@@ -17,31 +17,43 @@ class TrainedModel:
     model: Any
 
 
-def train_logreg(X_train: pd.DataFrame, y_train: pd.Series) -> TrainedModel:
-    model = LogisticRegression(**LOGREG_PARAMS)
+def train_logreg(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    use_balanced: bool = True,
+) -> TrainedModel:
+    params = {**LOGREG_PARAMS}
+    if not use_balanced:
+        params["class_weight"] = None
+    model = LogisticRegression(**params)
     model.fit(X_train, y_train)
     return TrainedModel(name="logistic_regression", model=model)
 
 
-def train_random_forest(X_train: pd.DataFrame, y_train: pd.Series) -> TrainedModel:
-    model = RandomForestClassifier(**RF_PARAMS)
+def train_random_forest(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    use_balanced: bool = True,
+) -> TrainedModel:
+    params = {**RF_PARAMS}
+    if not use_balanced:
+        params["class_weight"] = None
+    model = RandomForestClassifier(**params)
     model.fit(X_train, y_train)
     return TrainedModel(name="random_forest", model=model)
 
 
-def train_xgboost(X_train: pd.DataFrame, y_train: pd.Series) -> TrainedModel:
-    neg = int((y_train == 0).sum())
-    pos = int((y_train == 1).sum())
-    scale_pos_weight = neg / max(pos, 1)
+def train_xgboost(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    use_balanced: bool = True,
+) -> TrainedModel:
+    params = {**XGB_PARAMS}
+    if use_balanced:
+        neg = int((y_train == 0).sum())
+        pos = int((y_train == 1).sum())
+        params["scale_pos_weight"] = neg / max(pos, 1)
 
-    model = XGBClassifier(**XGB_PARAMS, scale_pos_weight=scale_pos_weight)
+    model = XGBClassifier(**params)
     model.fit(X_train, y_train)
     return TrainedModel(name="xgboost", model=model)
-
-
-def train_all(X_train: pd.DataFrame, y_train: pd.Series) -> list[TrainedModel]:
-    return [
-        train_logreg(X_train, y_train),
-        train_random_forest(X_train, y_train),
-        train_xgboost(X_train, y_train),
-    ]

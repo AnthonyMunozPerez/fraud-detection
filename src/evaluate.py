@@ -28,6 +28,7 @@ class EvalResult:
     precision: float
     recall: float
     confusion: np.ndarray
+    strategy: str = ""
     plot_paths: dict[str, Path] = field(default_factory=dict)
 
 
@@ -77,6 +78,30 @@ def plot_confusion_matrix(name: str, cm: np.ndarray, out_dir: Path) -> Path:
     return path
 
 
+def plot_pr_curves_combined(
+    curves: list[tuple[str, pd.Series, np.ndarray]],
+    out_path: Path,
+) -> Path:
+    fig, ax = plt.subplots(figsize=(9, 7))
+    for name, y_true, y_scores in curves:
+        precision, recall, _ = precision_recall_curve(y_true, y_scores)
+        ap = average_precision_score(y_true, y_scores)
+        ax.plot(recall, precision, label=f"{name} (AP={ap:.3f})", linewidth=1.5)
+
+    ax.set_xlabel("Recall")
+    ax.set_ylabel("Precision")
+    ax.set_title("Precision-Recall — all models × strategies")
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1.01)
+    ax.legend(loc="lower left", fontsize=8)
+    ax.grid(alpha=0.3)
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+    return out_path
+
+
 def evaluate_model(
     name: str,
     model: Any,
@@ -101,15 +126,20 @@ def evaluate_model(
 
 
 def summarize(results: list[EvalResult]) -> pd.DataFrame:
-    rows = [
-        {
-            "model": r.name,
-            "avg_precision": round(r.average_precision, 4),
-            "f1": round(r.f1, 4),
-            "precision": round(r.precision, 4),
-            "recall": round(r.recall, 4),
-        }
-        for r in results
-    ]
+    has_strategy = any(r.strategy for r in results)
+    rows = []
+    for r in results:
+        row = {"model": r.name}
+        if has_strategy:
+            row["strategy"] = r.strategy
+        row.update(
+            {
+                "avg_precision": round(r.average_precision, 4),
+                "f1": round(r.f1, 4),
+                "precision": round(r.precision, 4),
+                "recall": round(r.recall, 4),
+            }
+        )
+        rows.append(row)
     df = pd.DataFrame(rows).sort_values("avg_precision", ascending=False)
     return df.reset_index(drop=True)

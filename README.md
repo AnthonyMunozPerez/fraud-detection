@@ -33,10 +33,21 @@ scripts/
 ├── run_pipeline.py # end-to-end pipeline
 └── run_api.py      # launch API server
 
+notebooks/
+└── 01_eda.ipynb    # exploratory data analysis
+
 data/     # downloaded dataset (gitignored)
 models/   # serialized models
 outputs/  # plots and metrics
 ```
+
+## EDA
+`notebooks/01_eda.ipynb` explores the dataset before modeling: class imbalance, amount distributions, hour-of-day fraud patterns, and which PCA features discriminate fraud best. Open in PyCharm's Jupyter integration and run all cells.
+
+## Experiment: Strategy Comparison
+`scripts/run_pipeline.py` trains all three model families (LogReg, Random Forest, XGBoost) under all three imbalance-handling strategies (class weights, SMOTE, random undersampling) — nine runs total — and compares them. Results are saved as individual PR curves and confusion matrices per run, plus a combined `outputs/pr_curves_combined.png` overlaying all nine.
+
+Key finding on this dataset: class-weighted training beats SMOTE for all three models, and random undersampling (which reduces the training set to ~800 rows) collapses performance. The best model (`xgboost` + class weights) is what the API serves.
 
 ## Class Imbalance
 The dataset is extremely imbalanced (~0.17% fraud). The pipeline compares three strategies:
