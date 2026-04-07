@@ -2,6 +2,8 @@
 
 Credit card fraud detection pipeline using the Kaggle `mlg-ulb/creditcardfraud` dataset.
 
+**[Read the experiment results →](RESULTS.md)**
+
 ## Stack
 - **uv** for dependency management
 - **scikit-learn**, **xgboost**, **imbalanced-learn** for modeling
